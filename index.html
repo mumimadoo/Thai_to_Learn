@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>WeFool Enterprise Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <!-- 🎯 แก้ไขจุดที่ 1: ใส่ Favicon โลโก้ของคุณจาก static/favicon.png -->
+    <link rel="icon" type="image/png" href="/static/Logo_boy.png">
+    
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background-color: #0B0C10; color: #EDF0F5; font-family: 'Sarabun', 'Inter', Arial, sans-serif; margin: 0; padding: 25px; line-height: 1.5; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: #F39C12; font-family: 'Inter', sans-serif; font-weight: 700; margin: 0 0 4px 0; font-size: 28px; letter-spacing: 1px; }
+        .header p { color: #8A94A6; font-size: 13px; margin: 0; }
+
+        .upload-card { max-width: 1100px; margin: 0 auto 25px auto; background: #14171E; padding: 20px; border-radius: 8px; border: 1px solid #232A36; }
+        .radio-group-container { display: flex; align-items: center; gap: 20px; margin-bottom: 12px; }
+        .selector-title { font-weight: bold; color: #F1C40F; font-size: 13px; }
+        .radio-label { display: flex; align-items: center; position: relative; padding-left: 24px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .radio-label input { position: absolute; opacity: 0; }
+        .custom-radio { position: absolute; top: 1px; left: 0; height: 15px; width: 15px; background-color: #1F2635; border: 2px solid #3A4763; border-radius: 50%; }
+        .radio-label input:checked ~ .custom-radio { background-color: #F39C12; border-color: #F1C40F; }
+        
+        .input-field-wrapper { width: 100%; margin-bottom: 5px; }
+        .text-input { width: 100%; background: #1F2635; border: 1px solid #3A4763; padding: 12px; border-radius: 6px; color: #FFF; font-size: 13px; }
+
+        .btn-process { background: linear-gradient(135deg, #E67E22 0%, #F1C40F 100%); color: #0B0C10; font-size: 14px; font-weight: 700; padding: 12px; border-radius: 6px; border: none; cursor: pointer; width: 100%; margin-top: 12px; }
+        .status-box { background: #1B1711; border: 1px solid #E67E22; padding: 10px; border-radius: 6px; margin-top: 12px; color: #F1C40F; display: none; text-align: center; font-size: 13px; font-weight: bold; }
+
+        .main-layout { display: flex; gap: 25px; max-width: 1600px; margin: 0 auto; }
+        .panel-left { flex: 1.1; background: #14171E; border-radius: 8px; border: 1px solid #232A36; padding: 20px; display: flex; flex-direction: column; overflow: hidden; }
+        .panel-right { flex: 1; }
+
+        .sticky-player-box { position: sticky; top: 25px; background: #14171E; border: 1px solid #232A36; padding: 15px; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        .player-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 6px; overflow: hidden; }
+        .player-wrapper iframe, .player-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .meta-info-row { display: flex; justify-content: space-between; margin-top: 12px; font-weight: 700; font-size: 12px; color: #A0A5B5; }
+
+        .selector-panel-header { background: #1F2635; padding: 15px; border-radius: 6px; border-left: 4px solid #F39C12; margin-bottom: 20px; }
+        .dropdown-control-title { display: block; font-weight: 700; font-size: 13px; color: #8A94A6; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .main-select-menu { width: 100%; background: #0B0C10; color: #F1C40F; border: 1px solid #3A4763; padding: 10px; border-radius: 4px; font-size: 14px; font-weight: 700; cursor: pointer; outline: none; }
+        
+        .control-row-inline { display: flex; gap: 12px; margin-bottom: 12px; }
+        .search-input { flex: 1; background: #1F2635; border: 1px solid #3A4763; padding: 10px; border-radius: 6px; color: #FFF; font-size: 13px; }
+        .lang-dropdown { background: #1F2635; color: #F1C40F; border: 1px solid #3A4763; padding: 0 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
+
+        .scrollable-container { max-height: 450px; overflow-y: auto; border: 1px solid #232A36; border-radius: 6px; background: #0B0C10; padding: 12px; }
+        
+        .transcript-row { display: flex; gap: 10px; margin-bottom: 8px; transition: all 0.2s ease; border-radius: 6px; }
+        .transcript-row.active-row { 
+            background-color: #8B0000 !important; 
+            border-left: 4px solid #F39C12; 
+        }
+        .transcript-row.active-row .phrase-box {
+            color: #FFFFFF !important; 
+            font-weight: 700 !important; 
+            background: transparent !important;
+        }
+        .transcript-row.active-row .time-badge {
+            background: #F39C12 !important;
+            color: #0B0C10 !important;
+        }
+
+        /* 🎯 แก้ไขจุดที่ 2: ปรับเพิ่มขนาดตัวอักษรของตารางประโยคและคำบรรยายให้อ่านง่ายเบิ้มสะใจ */
+        .time-badge { background: #1F2635; color: #F1C40F; border: 1px solid #3A4763; padding: 5px 10px; border-radius: 4px; font-weight: 700; font-size: 14px !important; cursor: pointer; min-width: 65px; text-align: center; }
+        .phrase-box { font-size: 18px !important; color: #EDF0F5; padding: 8px 12px; background: #14171E; border-radius: 6px; flex-grow: 1; border-left: 3px solid #3A4763; word-break: break-word; cursor: pointer; line-height: 1.6; }
+        mark { background: #F1C40F; color: #0B0C10; font-weight: bold; border-radius: 2px; padding: 0 2px; }
+
+        /* ขยายฟอนต์คำบรรยายใต้จอภาพในโมดูล 2 เป็น 24px */
+        .executive-sub-box { background: #000; color: #F1C40F; font-size: 24px !important; font-weight: 700; text-align: center; padding: 40px 15px; border-radius: 6px; border: 1px solid #E67E22; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8); }
+        .summary-wrapper { background: rgba(230, 126, 34, 0.02); border: 1px solid rgba(230, 126, 34, 0.1); padding: 18px; border-radius: 6px; font-size: 13.5px; line-height: 1.7; }
+        .summary-wrapper ul { margin: 0; padding-left: 15px; }
+        .summary-wrapper li { margin-bottom: 8px; color: #EDF0F5; }
+
+        .telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 5px 0; }
+        .telemetry-box { background: #0B0C10; border: 1px solid #232A36; padding: 15px 10px; border-radius: 6px; text-align: center; border-top: 3px solid #F39C12; }
+        .telemetry-box h5 { margin: 0 0 6px 0; color: #8A94A6; font-size: 11px; letter-spacing: 0.5px; font-weight: 700; }
+        .telemetry-box p { margin: 0; color: #FFF; font-size: 18px; font-weight: 700; font-family: 'Inter', sans-serif; }
+
+        .bar-chart-container { position: relative; height: 300px; width: 100%; background: #0B0C10; border-radius: 6px; padding: 12px; border: 1px solid #232A36; }
+        .dominant-sentiment-banner { background: #221A0F; color: #F1C40F; border: 1px solid #E67E22; padding: 15px; border-radius: 6px; font-weight: bold; font-size: 14px; text-align: center; margin-bottom: 15px; border-left: 6px solid #F39C12; line-height: 1.6; }
+        .sentiment-table { width: 100%; border-collapse: collapse; background: #0B0C10; border-radius: 6px; overflow: hidden; border: 1px solid #232A36; }
+        .sentiment-table th { background: #1F2635; color: #F1C40F; text-align: left; padding: 10px 12px; font-size: 13px; }
+        .sentiment-table td { padding: 10px 12px; border-bottom: 1px solid #232A36; font-size: 13px; color: #EDF0F5; font-weight: bold; }
+
+        .recommend-vertical-stack { display: flex; flex-direction: column; gap: 15px; max-height: 450px; overflow-y: auto; }
+        .recommend-row-item { background: #0B0C10; border: 1px solid #232A36; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .recommend-row-title { font-weight: bold; font-size: 13px; color: #F1C40F; border-left: 3px solid #E67E22; padding-left: 8px; }
+        .recommend-cover-link { display: block; width: 100%; max-width: 360px; height: 200px; border-radius: 6px; overflow: hidden; border: 1px solid #232A36; transition: transform 0.15s; }
+        .recommend-cover-link:hover { transform: scale(1.01); border-color: #F1C40F; }
+        .recommend-cover-img { width: 100%; height: 100%; object-fit: cover; }
+
+        .chapter-card-item { background: #1F2635; border: 1px solid #3A4763; border-radius: 6px; padding: 14px 18px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: all 0.15s ease; border-left: 4px solid #E67E22; }
+        .chapter-card-item:hover { background: #2A344A; border-color: #F1C40F; transform: translateX(2px); }
+        .chapter-time-block { color: #F1C40F; font-family: 'Inter', sans-serif; font-weight: 700; font-size: 14px; min-width: 110px; }
+        .chapter-text-block { color: #EDF0F5; font-size: 13.5px; font-weight: bold; flex-grow: 1; }
+
+        .module-view { display: none !important; }
+        .module-view.active { display: block !important; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>WEFOOL ENTERPRISE MEDIA ANALYTICS</h1>
+        <p>ระบบถอดความสมบูรณ์แบบและวิเคราะห์สถิติมัลติมีเดียขั้นสูงรวมศูนย์ฝั่งซ้าย รองรับลิงก์ YouTube และ TikTok</p>
+    </div>
+
+    <div class="upload-card">
+        <div class="radio-group-container">
+            <span class="selector-title">🎯 แหล่งที่มาของสื่อ:</span>
+            <label class="radio-label"><input type="radio" name="mediaMode" value="youtube" checked onchange="toggleInputFields()"><span class="custom-radio"></span> YouTube / TikTok Link</label>
+            <label class="radio-label"><input type="radio" name="mediaMode" value="mp4" onchange="toggleInputFields()"><span class="custom-radio"></span> Local MP4 File</label>
+        </div>
+        
+        <div id="youtubeInputWrapper" class="input-field-wrapper">
+            <input type="text" id="youtubeUrl" class="text-input" placeholder="วางลิงก์วิดีโอ YouTube หรือลิงก์คลิปจาก TikTok สาธารณะที่นี่...">
+        </div>
+        
+        <div id="fileInputWrapper" class="input-field-wrapper" style="display: none;">
+            <input type="file" id="mediaFile" accept="video/mp4" class="text-input">
+        </div>
+        
+        <button class="btn-process" onclick="uploadAndProcessData()">⚜️ เริ่มขับเคลื่อนกระบวนการวิเคราะห์ข้อมูล</button>
+        <div id="statusBox" class="status-box">ศูนย์ควบคุมกำลังทำความสะอาดข้อมูลสถิติ...</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="panel-left">
+            <div class="selector-panel-header">
+                <label class="dropdown-control-title" for="mainDashboardSelector">📊 เลือกโมดูลการแสดงผลข้อมูล (8 Modules):</label>
+                <select id="mainDashboardSelector" class="main-select-menu" onchange="executeModuleSwitch()">
+                    <option value="transcript">📜 โมดูลที่ 1: ลำดับเหตุการณ์ (Transcript)</option>
+                    <option value="live">💬 โมดูลที่ 2: คำบรรยายสดตามเวลาจริง (Live Subtitle)</option>
+                    <option value="summary">💡 โมดูลที่ 3: รายงานสรุปผู้บริหาร (Executive Summary)</option>
+                    <option value="telemetry">📊 โมดูลที่ 4: Dashboard สถิติคำพูด (Speech Telemetry)</option>
+                    <option value="trending">📈 โมดูลที่ 5: กราฟแท่งคำยอดฮิต (Keyword Trending)</option>
+                    <option value="sentiment">🎭 โมดูลที่ 6: รายงานวิเคราะห์สภาวะอารมณ์ (Sentiment)</option>
+                    <option value="recommend">🚀 โมดูลที่ 7: ระบบแนะนำวิดีโอตรงปก (Recommendations)</option>
+                    <option value="chapters">🧭 โมดูลที่ 8: สารบัญเนื้อหาแยกตามช่วงเวลา (Video Chapters)</option>
+                </select>
+            </div>
+
+            <div id="module-transcript" class="module-view active">
+                <div class="control-row-inline">
+                    <input type="text" id="searchKeyword" class="search-input" placeholder="🔍 พิมพ์คำสำคัญเพื่อคัดกรองประโยค..." oninput="filterTranscriptData()">
+                    <select id="pivotLanguageSelect" class="lang-dropdown" onchange="executePivotTranslation()">
+                        <option value="TH" selected>🇹🇭 ภาษาไทยต้นฉบับ</option>
+                        <option value="English">🇺🇸 English (US)</option>
+                        <option value="Japanese">🇯🇵 Japanese (日本語)</option>
+                        <option value="Chinese">🇨🇳 Chinese (简体中文)</option>
+                    </select>
+                </div>
+                <div id="transcript-list" class="scrollable-container">
+                    <p style="text-align:center;color:#6A7280;padding-top:40px;">กรุณากดเริ่มวิเคราะห์เพื่อฟีดฐานข้อมูล</p>
+                </div>
+            </div>
+
+            <div id="module-live" class="module-view"><div id="live-sub-box" class="executive-sub-box">🎵 [ ระบบพร้อมซิงค์ข้อความบรรยายสดเมื่อเครื่องเล่นฝั่งขวาเริ่มทำงาน ]</div></div>
+            <div id="module-summary" class="module-view"><div id="summary-list" class="summary-wrapper"><p style="color:#6A7280;">รายงานโครงสร้างข้อสรุปเชิงกลยุทธ์จะปรากฏที่นี่</p></div></div>
+            <div id="module-telemetry" class="module-view">
+                <div class="telemetry-grid">
+                    <div class="telemetry-box"><h5>DURATION</h5><p id="t-duration">-</p></div>
+                    <div class="telemetry-box"><h5>TOTAL WORDS</h5><p id="t-words">-</p></div>
+                    <div class="telemetry-box"><h5>SENTENCES</h5><p id="t-sentences">-</p></div>
+                    <div class="telemetry-box"><h5>SPEAKING SPEED (WPM)</h5><p id="t-wpm">-</p></div>
+                    <div class="telemetry-box"><h5>CORE TOPICS</h5><p id="t-topics">-</p></div>
+                </div>
+            </div>
+            <div id="module-trending" class="module-view"><div class="bar-chart-container"><canvas id="keywordBarChart"></canvas></div></div>
+            <div id="module-sentiment" class="module-view">
+                <div id="dominantSentimentBanner" class="dominant-sentiment-banner">📊 บทวิเคราะห์แก่นบรรยากาศรวม: รอประมวลผลข้อมูล...</div>
+                <table class="sentiment-table">
+                    <thead><tr><th>ช่วงกรอบเวลา</th><th>สภาวะอารมณ์และโทนเสียงของคนพูด</th></tr></thead>
+                    <tbody id="sentiment-table-body"><tr><td colspan="2" style="text-align:center;color:#6A7280;">ข้อมูลอารมณ์ขั้นบันไดจะเรนเดอร์หลังแกะเสียงเสร็จสิ้น</td></tr></tbody>
+                </table>
+            </div>
+            <div id="module-recommend" class="module-view"><div id="recommend-list" class="recommend-vertical-stack"><p style="text-align:center;color:#6A7280;width:100%;">วิดีโอแนะนำแท้ตรงปกจาก YouTube จะปรากฏขึ้นที่นี่</p></div></div>
+            <div id="module-chapters" class="module-view"><div id="chapters-list-container" class="recommend-vertical-stack" style="gap: 12px;"><p style="text-align:center;color:#6A7280;width:100%;">สารบัญแยกหัวข้อตามนาทีอัจฉริยะจะปรากฏที่นี่</p></div></div>
+        </div>
+
+        <div class="panel-right">
+            <div class="sticky-player-box">
+                <div class="player-wrapper" id="playerWrapper"><div id="ytPlaceholder"></div></div>
+                <div class="meta-info-row">
+                    <span id="timeMarker">📍 พิกัดเวลารับชมปัจจุบัน: 00:00 นาที</span>
+                    <span id="modelMarker" style="color:#F1C40F;">🤖 โมเดลใช้งาน: -</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 แก้ไขจุดที่ 3: ดึงสคริปต์จากตำแหน่งโฟลเดอร์จริงของคุณที่ปุ่มไม่พังแน่นอน -->
+    <script src="/templates/app.js"></script>
+</body>
+</html>

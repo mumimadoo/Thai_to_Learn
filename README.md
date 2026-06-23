@@ -1,2 +1,2 @@
 # Thai_to_Learn
-# python -m uvicorn mian:app --reload
+# python -m uvicorn main:app --reload

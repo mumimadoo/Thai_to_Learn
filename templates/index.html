@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>YAMASEE Transcript - Enterprise Media Intelligence</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    
+    <link rel="icon" type="image/png" href="/static/Logo_boy.png">
+    
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+
+        /* ส่วนหัวของแพลตฟอร์มระดับยุทธศาสตร์ */
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { 
+            background: linear-gradient(135deg, #FF5722 0%, #FF9800 50%, #FFC107 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Inter', sans-serif; 
+            font-weight: 800; 
+            margin: 0 0 6px 0; 
+            font-size: 36px; 
+            letter-spacing: 1.5px;
+            filter: drop-shadow(0 2px 10px rgba(255, 87, 34, 0.2));
+        }
+        .header p { color: #94A3B8; font-size: 14px; margin: 0; letter-spacing: 0.5px; }
+
+        /* การ์ดควบคุมอินพุตโครงสร้างโมเดิร์น */
+        .upload-card { 
+            max-width: 1100px; 
+            margin: 0 auto 30px auto; 
+            background: #161920; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #2A2F3A; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 87, 34, 0.05);
+        }
+        .radio-group-container { display: flex; align-items: center; gap: 25px; margin-bottom: 15px; }
+        .selector-title { font-weight: 700; color: #FF9800; font-size: 14px; }
+        .radio-label { display: flex; align-items: center; position: relative; padding-left: 26px; cursor: pointer; font-size: 13px; font-weight: 600; color: #CBD5E1; }
+        .radio-label input { position: absolute; opacity: 0; }
+        .custom-radio { position: absolute; top: 1px; left: 0; height: 16px; width: 16px; background-color: #1F242F; border: 2px solid #475569; border-radius: 50%; transition: all 0.2s; }
+        .radio-label input:checked ~ .custom-radio { background-color: #FF5722; border-color: #FF9800; box-shadow: 0 0 10px #FF5722; }
+        
+        .input-field-wrapper { width: 100%; margin-bottom: 5px; }
+        .text-input { 
+            width: 100%; 
+            background: #1F242F; 
+            border: 1px solid #334155; 
+            padding: 14px; 
+            border-radius: 8px; 
+            color: #FFF; 
+            font-size: 13px; 
+            transition: all 0.2s;
+        }
+        .text-input:focus { outline: none; border-color: #FF5722; box-shadow: 0 0 10px rgba(255, 87, 34, 0.25); }
+
+        .status-box { background: #1C1310; border: 1px solid #FF5722; padding: 12px; border-radius: 8px; margin-top: 12px; color: #FF9800; display: none; text-align: center; font-size: 14px; font-weight: 700; }
+
+        /* โครงสร้างหน้าจอหลัก (Layout) */
+        .main-layout { display: flex; gap: 25px; max-width: 1600px; margin: 0 auto; }
+        
+        .panel-left { 
+            flex: 1.1; 
+            background: #161920; 
+            border-radius: 12px; 
+            border: 1px solid #2A2F3A; 
+            padding: 25px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+        .panel-right { flex: 1; }
+
+        /* กล่องแสดงผลสื่อวิดีโอ (Sticky Player Component) */
+        .sticky-player-box { 
+            position: sticky; 
+            top: 25px; 
+            background: #161920; 
+            border: 1px solid #2A2F3A; 
+            padding: 18px; 
+            border-radius: 12px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6); 
+            transition: box-shadow 0.2s ease;
+        }
+        .player-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
+        .player-wrapper iframe, .player-wrapper video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+        .meta-info-row { display: flex; justify-content: space-between; margin-top: 14px; font-weight: 700; font-size: 13px; color: #94A3B8; }
+
+        /* สไตล์ชุดควบคุมและดรอปดาวน์ระบบ */
+        .selector-panel-header { background: #1F242F; padding: 18px; border-radius: 8px; border-left: 5px solid #FF5722; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .dropdown-control-title { display: block; font-weight: 700; font-size: 12px; color: #64748B; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.8px; }
+        .main-select-menu { width: 100%; background: #0F1115; color: #FF9800; border: 1px solid #334155; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; outline: none; transition: border-color 0.2s; }
+        .main-select-menu:focus { border-color: #FF9800; }
+        
+        .control-row-inline { display: flex; gap: 12px; margin-bottom: 15px; }
+        .search-input { flex: 1; background: #1F242F; border: 1px solid #334155; padding: 12px; border-radius: 8px; color: #FFF; font-size: 13px; transition: all 0.2s; }
+        .search-input:focus { border-color: #FF5722; outline: none; }
+        .lang-dropdown { background: #1F242F; color: #FF9800; border: 1px solid #334155; padding: 0 15px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+        /* คอนเทนเนอร์แสดงข้อมูลและ Scrollbar */
+        .scrollable-container { max-height: 480px; overflow-y: auto; border: 1px solid #2A2F3A; border-radius: 8px; background: #0F1115; padding: 15px; }
+        .scrollable-container::-webkit-scrollbar { width: 6px; }
+        .scrollable-container::-webkit-scrollbar-track { background: #0F1115; }
+        .scrollable-container::-webkit-scrollbar-thumb { background: #2A2F3A; border-radius: 3px; }
+        .scrollable-container::-webkit-scrollbar-thumb:hover { background: #FF5722; }
+        
+        .transcript-row { display: flex; gap: 12px; margin-bottom: 10px; transition: all 0.2s ease; border-radius: 8px; padding: 2px; }
+        .transcript-row:hover { background: rgba(255,255,255,0.02); }
+        
+        .transcript-row.active-row { 
+            background: linear-gradient(90deg, #3A120A 0%, #1A0A07 100%) !important; 
+            border-left: 5px solid #FF5722 !important; 
+            box-shadow: 0 4px 15px rgba(255, 87, 34, 0.15);
+        }
+        .transcript-row.active-row .phrase-box {
+            color: #FFFFFF !important; 
+            font-weight: 600 !important; 
+            background: transparent !important;
+            border-left-color: transparent;
+        }
+        .transcript-row.active-row .time-badge {
+            background: #FF5722 !important;
+            color: #0F1115 !important;
+            box-shadow: 0 0 12px rgba(255, 87, 34, 0.5);
+        }
+
+        .time-badge { background: #1F242F; color: #FF9800; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px !important; cursor: pointer; min-width: 75px; text-align: center; transition: all 0.2s; }
+        .time-badge:hover { background: #334155; border-color: #FF9800; }
+        
+        .phrase-box { font-size: 16px !important; color: #E2E8F0; padding: 11px 15px; background: #161920; border-radius: 8px; flex-grow: 1; border-left: 4px solid #334155; word-break: break-word; cursor: pointer; line-height: 1.6; transition: all 0.15s; }
+        .phrase-box:hover { border-left-color: #FF9800; background: #1E232F; }
+        mark { background: #FF5722; color: #FFF; font-weight: bold; border-radius: 3px; padding: 0 4px; }
+
+        /* ส่วนแสดงผลข้อมูลการวิเคราะห์และโมดูลต่างๆ */
+        .executive-sub-box { background: #000; color: #FF9800; font-size: 22px !important; font-weight: 700; text-align: center; padding: 45px 20px; border-radius: 8px; border: 1px solid #FF5722; box-shadow: inset 0 4px 20px rgba(0,0,0,0.8); line-height: 1.6; }
+        .summary-wrapper { background: #161920; border: 1px solid #2A2F3A; padding: 20px; border-radius: 8px; font-size: 14px; line-height: 1.7; }
+        .summary-wrapper li { margin-bottom: 10px; color: #E2E8F0; }
+
+        /* แผงควบคุมมาตรวัดข้อมูลสถิติ (Telemetry Grid) */
+        .telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 5px 0; }
+        .telemetry-box { background: #161920; border: 1px solid #2A2F3A; padding: 16px 12px; border-radius: 8px; text-align: center; border-top: 4px solid #FF5722; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .telemetry-box h5 { margin: 0 0 6px 0; color: #94A3B8; font-size: 11px; letter-spacing: 0.8px; font-weight: 700; text-transform: uppercase; }
+        .telemetry-box p { margin: 0; color: #FF9800; font-size: 18px; font-weight: 700; }
+
+        .bar-chart-container { position: relative; height: 300px; width: 100%; background: #161920; border-radius: 8px; padding: 15px; border: 1px solid #2A2F3A; }
+        
+        /* แบนเนอร์และตารางวิเคราะห์สภาวะอารมณ์ */
+        .dominant-sentiment-banner { background: #1A1310; color: #FF9800; border: 1px solid #FF5722; padding: 15px; border-radius: 8px; font-weight: 700; font-size: 14px; text-align: center; margin-bottom: 15px; border-left: 6px solid #FF5722; line-height: 1.6; }
+        .sentiment-table { width: 100%; border-collapse: collapse; background: #161920; border-radius: 8px; overflow: hidden; border: 1px solid #2A2F3A; }
+        .sentiment-table th { background: #1F242F; color: #FF9800; text-align: left; padding: 12px; font-size: 13px; font-weight: 700; border-bottom: 1px solid #2A2F3A; }
+        .sentiment-table td { padding: 12px; border-bottom: 1px solid #1F242F; font-size: 13px; color: #E2E8F0; }
+
+        .recommend-vertical-stack { display: flex; flex-direction: column; gap: 15px; max-height: 480px; overflow-y: auto; }
+        .recommend-row-item { background: #161920; border: 1px solid #2A2F3A; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .recommend-row-title { font-weight: 700; font-size: 13px; color: #FF9800; border-left: 4px solid #FF5722; padding-left: 8px; }
+        .recommend-cover-link { display: block; width: 100%; max-width: 360px; height: 200px; border-radius: 6px; overflow: hidden; border: 1px solid #2A2F3A; transition: transform 0.15s; }
+        .recommend-cover-link:hover { transform: scale(1.02); border-color: #FF5722; }
+        .recommend-cover-img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🔥 YAMASEE TRANSCRIPT MULTIMEDIA PLATFORM Systems</h1>
+        <p>ระบบสกัดข้อมูลสื่อความเร็วสูงและการประมวลผลฐานสถิติวิเคราะห์เชิงยุทธศาสตร์ระดับองค์กร</p>
+    </div>
+
+    <div class="upload-card">
+        <div class="radio-group-container">
+            <span class="selector-title">📍 ที่มาของแหล่งข้อมูลมีเดีย:</span>
+            <label class="radio-label"><input type="radio" name="mediaMode" value="youtube" checked onchange="toggleInputFields()"><span class="custom-radio"></span> ลิงก์สัญญาณวิดีโอจากภายนอก (YouTube / TikTok)</label>
+            <label class="radio-label"><input type="radio" name="mediaMode" value="mp4" onchange="toggleInputFields()"><span class="custom-radio"></span> อัปโหลดไฟล์วิดีโอรูปแบบภายใน (MP4 Local File)</label>
+        </div>
+        
+        <div id="youtubeInputWrapper" class="input-field-wrapper">
+            <input type="text" id="youtubeUrl" class="text-input" placeholder="ระบุลิงก์พิกัดวิดีโอจากแพลตฟอร์ม YouTube หรือ TikTok เพื่อเริ่มต้นระบบ...">
+        </div>
+        
+        <div id="fileInputWrapper" class="input-field-wrapper" style="display: none;">
+            <input type="file" id="mediaFile" accept="video/mp4" class="text-input">
+        </div>
+        
+        <button class="btn-process" onclick="uploadAndProcessData()">⚡ เริ่มต้นกระบวนการถอดความและประมวลผลข้อมูลทางสถิติ</button>
+        <div id="statusBox" class="status-box">🔄 ระบบกำลังดำเนินการคัดกรอง แยกสัญญาณ และวิเคราะห์ฐานข้อมูลขั้นสูง...</div>
+    </div>
+
+    <div class="main-layout">
+        <div class="panel-left">
+            <div class="selector-panel-header">
+                <label class="dropdown-control-title" for="mainDashboardSelector">📊 แผงควบคุมโมดูลระบบวิเคราะห์ข้อมูล (8 Modules Dashboard):</label>
+                <select id="mainDashboardSelector" class="main-select-menu" onchange="executeModuleSwitch()">
+                    <option value="transcript">📜 โมดูลที่ 1: ลำดับบันทึกข้อความถอดความคำพูด (Transcript Timeline)</option>
+                    <option value="live">💬 โมดูลที่ 2: ระบบตรวจจับคำบรรยายสดตามเวลาจริง (Live Subtitle Synchronizer)</option>
+                    <option value="summary">💡 โมดูลที่ 3: บทสรุปยุทธศาสตร์และโครงสร้างเนื้อหา (Executive Summary)</option>
+                    <option value="telemetry">📊 โมดูลที่ 4: ระบบมาตรวัดสถิติวาจาและ telemetry (Speech Telemetry Metrics)</option>
+                    <option value="trending">📈 โมดูลที่ 5: สถิติอัตราความถี่การใช้คำสำคัญ (Core Keyword Trending)</option>
+                    <option value="sentiment">🎭 โมดูลที่ 6: บทวิเคราะห์เชิงจิตวิทยาและทฤษฎีอารมณ์สากล (Sentiment Analysis)</option>
+                    <option value="recommend">🚀 โมดูลที่ 7: ระบบคัดสรรและแนะนำเนื้อหาที่เกี่ยวข้อง (Strategic Recommendations)</option>
+                    <option value="chapters">🧭 โมดูลที่ 8: สารบัญจำแนกหัวข้อหลักตามพิกัดเวลา (Structured Video Chapters)</option>
+                </select>
+            </div>
+
+            <div id="module-transcript" class="module-view active">
+                <div class="control-row-inline">
+                    <input type="text" id="searchKeyword" class="search-input" placeholder="🔍 ป้อนคำสำคัญที่ต้องการตรวจสอบเพื่อกรองข้อมูลประโยค..." oninput="filterTranscriptData()">
+                    <select id="pivotLanguageSelect" class="lang-dropdown" onchange="executePivotTranslation()">
+                        <option value="TH" selected>🇹🇭 ภาษาไทยต้นฉบับ (Original TH)</option>
+                        <option value="English">🇺🇸 English (US)</option>
+                        <option value="Japanese">🇯🇵 Japanese (日本語)</option>
+                        <option value="Chinese">🇨🇳 Chinese (简体中文)</option>
+                    </select>
+                </div>
+                <div id="transcript-list" class="scrollable-container">
+                    <p style="text-align:center;color:#64748B;padding-top:40px; font-weight: 600;">⚠️ ระบบพร้อมทำงาน: กรุณาเปิดใช้งานกระบวนการประมวลผลเพื่อนำเข้าฐานข้อมูล</p>
+                </div>
+            </div>
+
+            <div id="module-live" class="module-view"><div id="live-sub-box" class="executive-sub-box">🎵 [ แผงหน้าจอตรวจจับคำบรรยายพร้อมทำงานทันทีเมื่อสัญญาณวิดีโอเริ่มต้น ]</div></div>
+            <div id="module-summary" class="module-view"><div id="summary-list" class="summary-wrapper"><p style="color:#64748B; text-align: center; font-weight: 600;">🔄 ระบบกำลังรอชุดข้อมูลเพื่อเรนเดอร์โครงสร้างเนื้อหาเชิงสกัดย่อ</p></div></div>
+            <div id="module-telemetry" class="module-view">
+                <div class="telemetry-grid">
+                    <div class="telemetry-box"><h5>DURATION</h5><p id="t-duration">-</p></div>
+                    <div class="telemetry-box"><h5>TOTAL WORDS</h5><p id="t-words">-</p></div>
+                    <div class="telemetry-box"><h5>SENTENCES</h5><p id="t-sentences">-</p></div>
+                    <div class="telemetry-box"><h5>SPEAKING SPEED (WPM)</h5><p id="t-wpm">-</p></div>
+                    <div class="telemetry-box"><h5>CORE TOPICS</h5><p id="t-topics">-</p></div>
+                </div>
+            </div>
+            <div id="module-trending" class="module-view"><div class="bar-chart-container"><canvas id="keywordBarChart"></canvas></div></div>
+            <div id="module-sentiment" class="module-view">
+                <div id="dominantSentimentBanner" class="dominant-sentiment-banner">📊 การวิเคราะห์มิติสภาวะอารมณ์รวม: อยู่ในระหว่างรอนำเข้าข้อมูล...</div>
+                <table class="sentiment-table">
+                    <thead><tr><th>พิกัดกรอบเวลาเนื้อหา</th><th>ผลลัพธ์การจำแนกโทนน้ำเสียงและสภาวะอารมณ์ผู้พูด</th></tr></thead>
+                    <tbody id="sentiment-table-body"><tr><td colspan="2" style="text-align:center;color:#64748B;">ตารางวิเคราะห์ความเปลี่ยนแปลงเชิงจิตวิทยาจะปรากฏขึ้นหลังเสร็จสิ้นขั้นตอนการประมวลผล</td></tr></tbody>
+                </table>
+            </div>
+            <div id="module-recommend" class="module-view"><div id="recommend-list" class="recommend-vertical-stack"><p style="text-align:center;color:#64748B;width:100%;">ข้อมูลวิดีโอแนะนำเชิงยุทธศาสตร์จะแสดงผล ณ ส่วนนี้</p></div></div>
+            <div id="module-chapters" class="module-view"><div id="chapters-list-container" class="recommend-vertical-stack" style="gap: 12px;"><p style="text-align:center;color:#64748B;width:100%;">สารบัญจำแนกบทเรียนเชิงโครงสร้างเวลาจะแสดงผล ณ ส่วนนี้</p></div></div>
+        </div>
+
+        <div class="panel-right">
+            <div class="sticky-player-box">
+                <div class="player-wrapper" id="playerWrapper"><div id="ytPlaceholder"></div></div>
+                <div class="meta-info-row">
+                    <span id="timeMarker">📍 พิกัดเวลาตรวจสอบปัจจุบัน: 00:00 นาที</span>
+                    <span id="modelMarker" style="color:#FF9800;">🤖 สถาปัตยกรรม AI ประมวลผล: -</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+2026-06-29 20:12:08.109 | INFO     | main:handle_analysis_submission:228 - ลงทะเบียนคำขอผ่าน Route ผสานสัญญาณจริง รหัสงาน: job_1782738728
+2026-06-29 20:12:08.112 | INFO     | main:enterprise_processing_pipeline:55 - เริ่มต้นประมวลผลข้อมูลจริงเชิงลึกสำหรับ Job ID: job_1782738728
+2026-06-29 20:12:08.114 | INFO     | main:enterprise_processing_pipeline:87 - ดึงสัญญาณวิดีโอจาก YouTube ID: youtube_X4uvCAubFGc
+2026-06-29 20:14:43.235 | INFO     | main:enterprise_processing_pipeline:104 - กำลังสกัดไฟล์เสียงแท้และสกัดสัญญาณ Noise ออกจากระบบ: E:/Project_write/WeFool/cache\youtube_X4uvCAubFGc.mp3
+2026-06-29 20:16:00.330 | INFO     | main:enterprise_processing_pipeline:112 - กำลังเปิดระบบสแกนสัญญาณเสียงและสั่งหั่นก้อนข้อมูลส่งวิเคราะห์...
+2026-06-29 20:19:44.126 | INFO     | main:enterprise_processing_pipeline:129 - ส่งข้อมูลคำพูดจริงเข้าสู่กระบวนการวิเคราะห์ 8 โมดูลหลักยุทธศาสตร์...
+2026-06-29 20:20:28.631 | INFO     | main:enterprise_processing_pipeline:185 - 💾 บันทึกผลการวิเคราะห์ของ ID: youtube_X4uvCAubFGc ลงโฟลเดอร์ประวัติเรียบร้อย
+2026-06-29 20:20:28.632 | INFO     | main:enterprise_processing_pipeline:190 - ✅ สำเร็จเสร็จสิ้น! ข้อมูลจากขบวนการลูกผสมถูกนำส่งเข้าระบบสำเร็จ
+2026-06-29 20:32:41.599 | INFO     | main:handle_analysis_submission:232 - ลงทะเบียนคำขอผ่าน Route ผสานสัญญาณจริง รหัสงาน: job_1782739961
+2026-06-29 20:32:41.602 | INFO     | main:enterprise_processing_pipeline:55 - เริ่มต้นประมวลผลข้อมูลจริงเชิงลึกสำหรับ Job ID: job_1782739961
+2026-06-29 20:32:41.606 | INFO     | main:enterprise_processing_pipeline:87 - ดึงสัญญาณวิดีโอจาก YouTube ID: youtube_0oIEDw5OPgY
+2026-06-29 20:36:32.229 | INFO     | main:enterprise_processing_pipeline:104 - กำลังสกัดไฟล์เสียงแท้คุณภาพสูงแบบรักษาเนื้อเสียงครบถ้วน: E:/Project_write/WeFool/cache\youtube_0oIEDw5OPgY.mp3
+2026-06-29 20:37:49.232 | INFO     | main:enterprise_processing_pipeline:112 - กำลังเปิดระบบสแกนสัญญาณเสียงและสั่งหั่นก้อนข้อมูลส่งวิเคราะห์...
+2026-06-29 20:40:26.960 | INFO     | main:enterprise_processing_pipeline:129 - ส่งข้อมูลคำพูดจริงเข้าสู่กระบวนการวิเคราะห์ 8 โมดูลหลักยุทธศาสตร์...
+2026-06-29 20:41:10.442 | INFO     | main:enterprise_processing_pipeline:189 - 💾 บันทึกผลการวิเคราะห์ของ ID: youtube_0oIEDw5OPgY ลงโฟลเดอร์ประวัติเรียบร้อย
+2026-06-29 20:41:10.443 | INFO     | main:enterprise_processing_pipeline:194 - ✅ สำเร็จเสร็จสิ้น! ข้อมูลจากขบวนการลูกผสมถูกนำส่งเข้าระบบสำเร็จ
+2026-06-29 20:49:36.433 | INFO     | main:handle_analysis_submission:232 - ลงทะเบียนคำขอผ่าน Route ผสานสัญญาณจริง รหัสงาน: job_1782740976
+2026-06-29 20:49:36.435 | INFO     | main:enterprise_processing_pipeline:55 - เริ่มต้นประมวลผลข้อมูลจริงเชิงลึกสำหรับ Job ID: job_1782740976
+2026-06-29 20:49:36.440 | INFO     | main:enterprise_processing_pipeline:87 - ดึงสัญญาณวิดีโอจาก YouTube ID: youtube_0H94lRrdbR4
+2026-06-29 20:52:50.584 | INFO     | main:enterprise_processing_pipeline:104 - กำลังสกัดไฟล์เสียงแท้คุณภาพสูงแบบรักษาเนื้อเสียงครบถ้วน: E:/Project_write/WeFool/cache\youtube_0H94lRrdbR4.mp3
+2026-06-29 20:54:24.846 | INFO     | main:enterprise_processing_pipeline:112 - กำลังเปิดระบบสแกนสัญญาณเสียงและสั่งหั่นก้อนข้อมูลส่งวิเคราะห์...
+2026-06-29 21:13:34.442 | INFO     | main:enterprise_processing_pipeline:129 - ส่งข้อมูลคำพูดจริงเข้าสู่กระบวนการวิเคราะห์ 8 โมดูลหลักยุทธศาสตร์...
+2026-06-29 21:14:09.692 | INFO     | main:enterprise_processing_pipeline:189 - 💾 บันทึกผลการวิเคราะห์ของ ID: youtube_0H94lRrdbR4 ลงโฟลเดอร์ประวัติเรียบร้อย
+2026-06-29 21:14:09.693 | INFO     | main:enterprise_processing_pipeline:194 - ✅ สำเร็จเสร็จสิ้น! ข้อมูลจากขบวนการลูกผสมถูกนำส่งเข้าระบบสำเร็จ
+2026-06-29 21:36:23.349 | INFO     | main:handle_analysis_submission:232 - ลงทะเบียนคำขอผ่าน Route ผสานสัญญาณจริง รหัสงาน: job_1782743783
+2026-06-29 21:36:23.351 | INFO     | main:enterprise_processing_pipeline:55 - เริ่มต้นประมวลผลข้อมูลจริงเชิงลึกสำหรับ Job ID: job_1782743783
+2026-06-29 21:36:23.352 | INFO     | main:enterprise_processing_pipeline:87 - ดึงสัญญาณวิดีโอจาก YouTube ID: youtube_Yf4M3WZilRI
+2026-06-29 21:37:13.580 | INFO     | main:enterprise_processing_pipeline:104 - กำลังสกัดไฟล์เสียงแท้คุณภาพสูงแบบรักษาเนื้อเสียงครบถ้วน: E:/Project_write/WeFool/cache\youtube_Yf4M3WZilRI.mp3
+2026-06-29 21:38:28.930 | INFO     | main:enterprise_processing_pipeline:112 - กำลังเปิดระบบสแกนสัญญาณเสียงและสั่งหั่นก้อนข้อมูลส่งวิเคราะห์...
+2026-06-29 21:55:14.390 | INFO     | main:enterprise_processing_pipeline:129 - ส่งข้อมูลคำพูดจริงเข้าสู่กระบวนการวิเคราะห์ 8 โมดูลหลักยุทธศาสตร์...
+2026-06-29 21:55:49.087 | INFO     | main:enterprise_processing_pipeline:189 - 💾 บันทึกผลการวิเคราะห์ของ ID: youtube_Yf4M3WZilRI ลงโฟลเดอร์ประวัติเรียบร้อย
+2026-06-29 21:55:49.087 | INFO     | main:enterprise_processing_pipeline:194 - ✅ สำเร็จเสร็จสิ้น! ข้อมูลจากขบวนการลูกผสมถูกนำส่งเข้าระบบสำเร็จ

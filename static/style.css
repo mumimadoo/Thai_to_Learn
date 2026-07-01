@@ -1,0 +1,202 @@
+:root {
+    --primary-neon: #FF5722;
+    --bg-deep: #0F1115;
+    --glass-bg: rgba(22, 25, 32, 0.75);
+    --text-main: #E2E8F0;
+}
+
+body {
+    background: linear-gradient(135deg, #FF4500, #FF8C00, #FFD700, #8B0000);
+    background-size: 400% 400%;
+    animation: fireAnimation 10s ease infinite;
+    color: var(--text-main);
+    font-family: 'Sarabun', 'Inter', sans-serif;
+    margin: 0;
+    padding: 25px;
+}
+
+@keyframes fireAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 🎯 หน้าจอกระจกนีออนใสลึกแบบมีเงา */
+.glass-card {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* ส่วนประกอบ Layout หน้าเว็บควบคุม */
+.main-layout { display: flex; gap: 25px; max-width: 1600px; margin: 0 auto; }
+.panel-left { flex: 1.1; padding: 25px; display: flex; flex-direction: column; overflow: hidden; }
+.panel-right { flex: 1; }
+.sticky-player-box { position: sticky; top: 25px; padding: 18px; }
+.player-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
+
+/* ปุ่มกระบวนการความร้อนสูง */
+.btn-process {
+    background: linear-gradient(135deg, #00BFFF, #1E90FF, #00FFFF, #87CEEB);
+    background-size: 300% 300%;
+    animation: seaAnimation 5s ease infinite;
+    border: none; color: #fff; padding: 15px; border-radius: 8px;
+    font-weight: 700; cursor: pointer; width: 100%; transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
+}
+
+@keyframes seaAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.btn-process:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(0, 191, 255, 0.5); filter: brightness(1.1); }
+
+/* สไตล์โครงสร้างโมดูลาร์ภายในบอร์ด */
+.module-view { display: none; opacity: 0; transition: 0.3s; }
+.module-view.active { display: block !important; opacity: 1; }
+.radio-group-container { display: flex; align-items: center; gap: 25px; margin-bottom: 15px; }
+.selector-title { font-weight: 700; color: #FF9800; font-size: 14px; }
+.radio-label { display: flex; align-items: center; position: relative; padding-left: 26px; cursor: pointer; font-size: 13px; font-weight: 600; color: #CBD5E1; }
+.radio-label input { position: absolute; opacity: 0; }
+.custom-radio { position: absolute; top: 1px; left: 0; height: 16px; width: 16px; background-color: #1F242F; border: 2px solid #475569; border-radius: 50%; }
+.radio-label input:checked~the-custom-radio { background-color: #FF5722; border-color: #FF9800; box-shadow: 0 0 10px #FF5722; }
+.input-field-wrapper { width: 100%; margin-bottom: 5px; }
+.text-input { width: 100%; background: #1F242F; border: 1px solid #334155; padding: 14px; border-radius: 8px; color: #FFF; font-size: 13px; }
+.status-box { background: #1C1310; border: 1px solid #FF5722; padding: 12px; border-radius: 8px; margin-top: 12px; color: #FF9800; display: none; text-align: center; font-size: 14px; font-weight: 700; }
+.selector-panel-header { background: #1F242F; padding: 18px; border-radius: 8px; border-left: 5px solid #FF5722; margin-bottom: 25px; }
+.dropdown-control-title { display: block; font-weight: 700; font-size: 12px; color: #64748B; margin-bottom: 10px; text-transform: uppercase; }
+.main-select-menu { width: 100%; background: #0F1115; color: #FF9800; border: 1px solid #334155; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 700; outline: none; }
+.control-row-inline { display: flex; gap: 12px; margin-bottom: 15px; }
+.search-input { flex: 1; background: #1F242F; border: 1px solid #334155; padding: 12px; border-radius: 8px; color: #FFF; font-size: 13px; }
+.lang-dropdown { background: #1F242F; color: #FF9800; border: 1px solid #334155; padding: 0 15px; border-radius: 8px; font-weight: 700; font-size: 13px; }
+.scrollable-container { max-height: 480px; overflow-y: auto; border: 1px solid #2A2F3A; border-radius: 8px; background: #0F1115; padding: 15px; }
+.transcript-row { display: flex; gap: 12px; margin-bottom: 10px; border-radius: 8px; padding: 2px; }
+.transcript-row.active-row { background: linear-gradient(90deg, #3A120A 0%, #1A0A07 100%) !important; border-left: 5px solid #FF5722 !important; }
+.transcript-row.active-row .time-badge { background: #FF5722 !important; color: #0F1115 !important; }
+.time-badge { background: #1F242F; color: #FF9800; border: 1px solid #334155; padding: 6px 12px; border-radius: 6px; font-weight: 700; min-width: 75px; text-align: center; cursor: pointer; }
+.phrase-box { font-size: 16px; color: #E2E8F0; padding: 11px 15px; background: #161920; border-radius: 8px; flex-grow: 1; border-left: 4px solid #334155; word-break: break-word; }
+.executive-sub-box { background: #000; color: #FF9800; font-size: 22px; font-weight: 700; text-align: center; padding: 45px 20px; border-radius: 8px; border: 1px solid #FF5722; }
+.summary-wrapper { background: #161920; border: 1px solid #2A2F3A; padding: 20px; border-radius: 8px; }
+.telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+.telemetry-box { background: #161920; border: 1px solid #2A2F3A; padding: 16px 12px; border-radius: 8px; text-align: center; border-top: 4px solid #FF5722; }
+.telemetry-box h5 { margin: 0 0 6px 0; color: #94A3B8; font-size: 11px; text-transform: uppercase; }
+.telemetry-box p { margin: 0; color: #FF9800; font-size: 18px; font-weight: 700; }
+.bar-chart-container { position: relative; height: 300px; width: 100%; background: #161920; border-radius: 8px; padding: 15px; border: 1px solid #2A2F3A; }
+.dominant-sentiment-banner { background: #1A1310; color: #FF9800; border: 1px solid #FF5722; padding: 15px; border-radius: 8px; font-weight: 700; text-align: center; margin-bottom: 15px; border-left: 6px solid #FF5722; }
+.sentiment-table { width: 100%; border-collapse: collapse; background: #161920; border-radius: 8px; overflow: hidden; border: 1px solid #2A2F3A; }
+.sentiment-table th { background: #1F242F; color: #FF9800; text-align: left; padding: 12px; }
+.sentiment-table td { padding: 12px; border-bottom: 1px solid #1F242F; color: #E2E8F0; }
+.recommend-vertical-stack { display: flex; flex-direction: column; gap: 15px; max-height: 480px; overflow-y: auto; }
+.recommend-row-item { background: #161920; border: 1px solid #2A2F3A; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+.recommend-row-title { font-weight: 700; color: #FF9800; border-left: 4px solid #FF5722; padding-left: 8px; }
+.recommend-cover-link { display: block; width: 100%; max-width: 360px; height: 200px; border-radius: 6px; overflow: hidden; border: 1px solid #2A2F3A; }
+.recommend-cover-img { width: 100%; height: 100%; object-fit: cover; }
+mark { background: #FF5722; color: #FFF; }
+
+/* 🧭 [อัปเกรดคลาสใหม่]: โครงสร้าง Accordion บานพับสำหรับสารบัญโมดูลที่ 8 ชิ้นงานไซไฟระดับ Enterprise */
+.chapter-accordion-box {
+    background: rgba(22, 25, 32, 0.6);
+    border: 1px solid #2A2F3A;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.chapter-accordion-box[open] {
+    border-color: var(--primary-neon);
+    box-shadow: 0 0 15px rgba(255, 87, 34, 0.15);
+}
+
+.chapter-summary-bar {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    background: #161920;
+    list-style: none; /* เอาจุดหัวข้อดั้งเดิมของเบราว์เซอร์ออก */
+    user-select: none;
+    border-left: 5px solid var(--primary-neon);
+}
+
+.chapter-summary-bar::-webkit-details-marker {
+    display: none; /* เอาจุดสำหรับเบราว์เซอร์ตระกูล Chrome/Safari ออก */
+}
+
+.summary-left-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.main-chapter-time {
+    color: #FF9800;
+    font-weight: 700;
+    font-size: 14px;
+    min-width: 100px;
+}
+
+.main-chapter-title {
+    color: #E2E8F0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.toggle-icon-indicator {
+    color: #64748B;
+    font-size: 11px;
+    transition: transform 0.2s ease;
+}
+
+.chapter-accordion-box[open] .toggle-icon-indicator {
+    transform: rotate(180deg);
+    color: var(--primary-neon);
+}
+
+/* คอนเทนเนอร์รายการบทย่อย */
+.sub-chapters-dropdown-container {
+    background: #0F1115;
+    padding: 10px 15px 15px 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid #2A2F3A;
+}
+
+.sub-chapter-node-item {
+    background: #161920;
+    border: 1px solid #2A2F3A;
+    border-left: 3px solid #FF9800;
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sub-chapter-node-item:hover {
+    background: #1F242F;
+    border-color: var(--primary-neon);
+    transform: translateX(3px);
+}
+
+.sub-node-time {
+    color: #64748B;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 75px;
+}
+
+.sub-node-text {
+    color: #CBD5E1;
+    font-size: 13px;
+    font-weight: 600;
+}

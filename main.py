@@ -30,7 +30,9 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(CURRENT_DIR, "static")
 TEMPLATES_DIR = os.path.join(CURRENT_DIR, "templates")
 
-CACHE_DIR = os.getenv("CACHE_DIR", r"E:\Project_write\WeFool\cache")
+CACHE_DIR = os.getenv("CACHE_DIR", "cache")
+if not os.path.isabs(CACHE_DIR):
+    CACHE_DIR = os.path.join(CURRENT_DIR, CACHE_DIR)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # 🎯 คลังจัดเก็บสมุดรายชื่อประวัติ สำหรับล็อกลิงก์เดิมไม่ให้วิ่งรันซ้ำ
@@ -48,7 +50,6 @@ JOBS_DATA = {}
 
 video_engine = VideoEngine()
 audio_engine = AudioEngine(cache_dir=CACHE_DIR)
-ai_engine = AIAnalysisEngine(api_key=GEMINI_API_KEY)
 
 def fetch_related_videos(keywords: list, count: int = 6) -> list:
     """ดึงวิดีโอแนะนำจาก YouTube จำนวน 4-7 คลิป โดยใช้คีย์เวิร์ดเด่นจากการวิเคราะห์"""
@@ -90,6 +91,7 @@ def fetch_related_videos(keywords: list, count: int = 6) -> list:
 # ----------------------------------------------------
 async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Optional[str], file_bytes: Optional[bytes], file_name: Optional[str], selected_model: Optional[str] = None):
     pipeline_start_time = time.time()
+    current_stage = "initializing"
     try:
         logger.info(f"เริ่มต้นประมวลผลข้อมูลจริงเชิงลึกสำหรับ Job ID: {job_id}")
         JOBS_DATA[job_id]["status"] = "processing"
@@ -120,6 +122,7 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
         JOBS_DATA[job_id]["progress"] = 10
 
         # 2. จัดการข้อมูลแหล่งสื่ออินพุต (Video Processing Phase)
+        current_stage = "video_download"
         if is_youtube:
             video_path = os.path.join(CACHE_DIR, f"{unique_id}.mp4")
             logger.info(f"ดึงสัญญาณวิดีโอผ่านแพลตฟอร์ม: {unique_id}")
@@ -138,6 +141,9 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                         f'yt-dlp --js-runtimes node -f "bestvideo+bestaudio/best" '
                         f'--merge-output-format mp4 '
                         f'--ffmpeg-location "{CURRENT_DIR}" '
+                        f'--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" '
+                        f'--extractor-args "youtube:player_client=android,ios;skip=webpage" '
+                        f'--no-check-certificates --geo-bypass '
                         f'"{youtube_url}" -o "{video_path}"'
                     )
                 
@@ -167,31 +173,68 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                         f.write(file_bytes)
 
         JOBS_DATA[job_id]["progress"] = 30
+        
+        # 🎯 [P1-1]: ประกาศ path นี้ทันทีเพื่อป้องกัน UnboundLocalError
+        dest_static_video = os.path.join(STATIC_DIR, f"{unique_id}.mp4")
 
-        # 3. กระบวนการสกัดสัญญาณเสียง (Audio Extraction Phase)
-        audio_path = os.path.join(CACHE_DIR, f"{unique_id}.mp3")
+        # 3. ขบวนการสกัดสัญญาณเสียง (Audio Extraction Phase)
+        current_stage = "audio_extraction"
+        audio_path = os.path.join(CACHE_DIR, f"{unique_id}.wav")
+        
+        # 🎯 [P1-1]: เลือก transcription source แบบปลอดภัย
+        if os.path.exists(dest_static_video):
+            transcription_video_source = dest_static_video
+        elif os.path.exists(video_path):
+            transcription_video_source = video_path
+        else:
+            raise FileNotFoundError(
+                f"No valid video source found: video_path={video_path}, dest_static_video={dest_static_video}"
+            )
+        
         if not os.path.exists(audio_path):
-            logger.info(f"กำลังสกัดไฟล์เสียงแท้และป้องกันบั๊กสตรีมว่างของ TikTok: {audio_path}")
+            logger.info(f"กำลังสกัดสัญญาณเสียงจากแหล่ง: {transcription_video_source}")
             
-            cmd_audio = f'ffmpeg -y -i "{video_path}" -vn -acodec libmp3lame -q:a 2 "{audio_path}"'
-            result = subprocess.run(cmd_audio, shell=True, capture_output=True)
+            # 🎯 [P1-1 & P1-4]: สกัดเสียงเป็น WAV mono 16kHz พร้อม Diagnostic Check
+            # FFmpeg อ่าน duration
+            def get_duration(path):
+                cmd = f'ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "{path}"'
+                res = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+                return float(res.stdout.strip()) if res.stdout.strip() else 0.0
+
+            source_dur = get_duration(transcription_video_source)
+            logger.info(f"Diagnostics: Source duration: {source_dur}")
+
+            cmd_audio = [
+                "ffmpeg", "-y", "-i", transcription_video_source,
+                "-vn", "-ac", "1", "-ar", "16000",
+                "-c:a", "pcm_s16le", audio_path
+            ]
+            result = subprocess.run(cmd_audio, capture_output=True)
             
             if result.returncode != 0:
-                logger.warning("⚠️ ไม่พบท่อเสียงตรงๆ กำลังใช้คำสั่งกู้คืนช่องสัญญาณ...")
-                cmd_fallback = f'ffmpeg -y -i "{video_path}" -f mp3 -vn -acodec libmp3lame -q:a 2 "{audio_path}"'
-                fallback_result = subprocess.run(cmd_fallback, shell=True, capture_output=True)
+                logger.error("🚨 สกัดเสียงล้มเหลว")
+                JOBS_DATA[job_id]["status"] = "failed"
+                JOBS_DATA[job_id]["error"] = "Audio extraction failed"
+                return
                 
-                if fallback_result.returncode != 0:
-                    logger.error("🚨 สัญญาณเสียงหายเด็ดขาด กำลังเปิดใช้งานระบบสร้างเลเยอร์เสียงจำลอง...")
-                    cmd_silent = f'ffmpeg -y -i "{video_path}" -f lavfi -i anullsrc=channel_layout=stereo:sample_rate=44100 -c:v copy -c:a libmp3lame -q:a 2 -shortest -vn "{audio_path}"'
-                    subprocess.run(cmd_silent, shell=True, check=True)
+            audio_dur = get_duration(audio_path)
+            logger.info(f"Diagnostics: Audio duration: {audio_dur}")
+            
+            diff = abs(source_dur - audio_dur)
+            if diff > 1.0:
+                logger.error(f"🚨 ERROR: Timebase drift too high: {diff}s")
+                JOBS_DATA[job_id]["status"] = "failed"
+                JOBS_DATA[job_id]["error"] = "Timebase drift exceeds threshold"
+                return
+            elif diff > 0.25:
+                logger.warning(f"⚠️ WARNING: Timebase drift detected: {diff}s")
 
         JOBS_DATA[job_id]["progress"] = 50
 
         # 4. ขบวนการปรับสตรีมภาพวิดีโอให้ขึ้นจอ (Web-Ready Remux แก้จอดำ)
+        current_stage = "remuxing"
         logger.info("กำลังเปิดระบบสแกนสัญญาณเสียงและสั่งหั่นก้อนข้อมูลส่งวิเคราะห์...")
         
-        dest_static_video = os.path.join(STATIC_DIR, f"{unique_id}.mp4")
         if os.path.exists(video_path) and not os.path.exists(dest_static_video):
             youtube_url_lower = (youtube_url or "").lower()
             
@@ -221,8 +264,27 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                 shutil.copy(video_path, dest_static_video)
 
         # สั่งให้ระบบถอดความคำพูดออกมาก่อนเพื่อนำค่าไปเทียบความคล้ายคลึง
+        current_stage = "transcription"
         transcript_engine = TranscriptEngine(preferred_model=selected_model)
-        real_timeline = transcript_engine.transcribe_audio(audio_path)
+        transcript_result = transcript_engine.transcribe_audio(audio_path, cache_dir=CACHE_DIR)
+        real_timeline = transcript_result["timeline"]
+        metadata = transcript_result["metadata"]
+
+        JOBS_DATA[job_id]["warnings"] = []
+        integrity = metadata.get("integrity_percent", 100.0)
+        failed_chunks = metadata.get("failed_chunk_indexes", [])
+        
+        if integrity < 70:
+            error_msg = f"🚨 ระบบถอดความล้มเหลวโดยสิ้นเชิง ({integrity}%): Failed chunks indexes: {failed_chunks}"
+            logger.error(error_msg)
+            JOBS_DATA[job_id]["status"] = "failed"
+            JOBS_DATA[job_id]["error"] = error_msg
+            return
+        elif integrity < 100:
+            warning_msg = f"⚠️ ระบบถอดความคำพูดไม่สมบูรณ์ ({integrity}%): Failed chunks indexes: {failed_chunks}"
+            logger.warning(warning_msg)
+            JOBS_DATA[job_id]["warnings"].append(warning_msg)
+
         formatted_text_lines = [f"{item['label']} - {item['text']}" for item in real_timeline]
         
         JOBS_DATA[job_id]["progress"] = 75
@@ -265,6 +327,7 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
         # ----------------------------------------------------
         # 5. ส่งวิเคราะห์ชุดโครงสร้าง 8 โมดูลหลักแบบ Dynamic
         # ----------------------------------------------------
+        current_stage = "ai_analysis"
         logger.info("ส่งข้อมูลคำพูดจริงเข้าสู่กระบวนการวิเคราะห์ 8 โมดูลหลักยุทธศาสตร์...")
         
         strategic_prompt = (
@@ -280,7 +343,10 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
             "5. ห้ามเติมข้อมูลที่ไม่มีอยู่ในคลิป\n"
             "6. ใช้ข้อมูลจากข้อความถอดเสียงจริงเท่านั้น\n"
             "7. หากพบคำสะกดผิด ให้ใช้ความหมายเดิมในการวิเคราะห์ แต่ห้ามแก้ไขข้อความต้นฉบับ\n"
-            "8. หากข้อมูลไม่ชัดเจน ให้ระบุว่าไม่แน่ใจ ห้ามเดา\n\n"
+            "9. หากคลิปยาวเกิน 10 นาที ต้องมีอย่างน้อย 4 หัวข้อหลัก (Chapters)\n"
+            "10. หากคลิปยาวเกิน 20 นาที ต้องมีอย่างน้อย 6 หัวข้อหลัก (Chapters)\n"
+            "11. แต่ละหัวข้อหลักต้องมีหัวข้อย่อย (sub_chapters) อย่างน้อย 2 รายการ\n"
+            "12. ต้องใช้ข้อมูลจากข้อความถอดเสียงจริงเท่านั้น ห้ามสร้างข้อมูลเท็จ\n\n"
 
             "ภารกิจคือสร้างผลการวิเคราะห์จากข้อความเท่านั้น โดยข้อความต้นฉบับต้องถือเป็นข้อมูลอ้างอิงที่ห้ามเปลี่ยนแปลง\n\n"
 
@@ -291,29 +357,72 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
             "  \"keyword_trending\": [{\"keyword\": \"คำสำคัญที่เจอในคลิป\", \"count\": จำนวนครั้งที่เจอ}],\n"
             "  \"sentiment_analysis\": [{\"time_range\": \"ช่วงเวลา\", \"sentiment\": \"อารมณ์\", \"trigger\": \"ปัจจัยกระตุ้น\", \"purpose\": \"เป้าหมายคำพูด\"}],\n"
             "  \"dominant_sentiment_summary\": \"บทสรุปภาพรวมบรรยากาศทางจิตวิทยาของคลิปนี้\",\n"
-            "  \"video_chapters\": [{\"start_time_seconds\": วินาที, \"time_range_label\": \"ช่วงเวลา\", \"chapter_title\": \"ชื่อบทเรียนย่อยจากคลิปจริง\", \"sub_chapters\": [{\"start_time_seconds\": วินาที, \"time_range_label\": \"ช่วงเวลา\", \"sub_title\": \"หัวข้อย้อย\"}]}]\n"
+            "  \"video_chapters\": [{\"start_time_seconds\": วินาที, \"chapter_title\": \"ชื่อบทเรียนย่อยจากคลิปจริง\", \"sub_chapters\": [{\"start_time_seconds\": วินาที, \"sub_title\": \"หัวข้อย้อย\"}]}]\n"
             "}"
         )
 
         current_ai_engine = AIAnalysisEngine(api_key=GEMINI_API_KEY, preferred_model=selected_model)
         ai_analysis_data = current_ai_engine.generate_analytics(strategic_prompt, formatted_text_lines)
 
+        analysis_error = None
         if ai_analysis_data is None:
-            logger.warning("⚠️ โครงข่าย AI ส่งค่าว่างกลับมา กำลังเปิดใช้งานระบบฐานข้อมูลสำรอง...")
+            logger.error("🚨 โมดูลวิเคราะห์ AI ล้มเหลว")
+            analysis_error = "AI analysis failed"
             ai_analysis_data = {
-                "summary": ["ระบบถอดความสำเร็จครบถ้วน แต่โมดูลย่อยวิเคราะห์เกินขีดจำกัดหน่วยความจำชั่วคราว"],
-                "keyword_trending": [{"keyword": "วิดีโอ", "count": 10}],
-                "sentiment_analysis": [{"time_range": "0:00 - End", "sentiment": "Analytical", "trigger": "ระบบจำลอง", "purpose": "คงสถานะแดชบอร์ด"}],
-                "dominant_sentiment_summary": "อยู่ในระหว่างประเมินผลผ่านฐานข้อมูลสำรอง",
-                "video_chapters": [{"start_time_seconds": 0, "time_range_label": "00:00", "chapter_title": "บทเรียนหลักจากคลิปวิดีโอต้นฉบับ", "sub_chapters": []}]
+                "summary": [], "keyword_trending": [], "sentiment_analysis": [],
+                "dominant_sentiment_summary": "", "video_chapters": []
             }
 
         # 6. คำนวณมาตรวัดเชิงสถิติ
         total_sentences = len(real_timeline)
         total_words = sum(len(item['text'].split()) for item in real_timeline) or (len("".join([item['text'] for item in real_timeline])) // 3)
         
-        last_time = real_timeline[-1]['time'] if (real_timeline and real_timeline[-1]['time'] > 0) else 0
+        last_item = real_timeline[-1] if real_timeline else None
+        last_time = last_item['start'] if last_item else 0
         wpm_calc = str(int(total_words / (last_time / 60))) if last_time > 0 else "140"
+
+        # 🎯 [Fallback Mechanism]: หาก AI ส่ง video_chapters น้อยกว่า 3 หรือว่าง ให้สร้าง fallback chapters จาก timeline จริง
+        
+        has_chapters = ai_analysis_data and ai_analysis_data.get("video_chapters") and len(ai_analysis_data.get("video_chapters")) >= 3
+        
+        if not has_chapters:
+            logger.info("ℹ️ AI chapter ไม่เพียงพอ, กำลังรัน Fallback Chapter Generation...")
+            
+            # แบ่งช่วงทุก 4 นาที
+            interval = 240
+            total_duration = real_timeline[-1]["start"] if real_timeline else 0
+            
+            fallback_chapters = []
+            
+            num_chapters = max(3, int(total_duration / interval) + 1)
+            
+            for i in range(num_chapters):
+                start_time = i * interval
+                
+                # หาข้อความในช่วงเวลานี้
+                chapter_text = []
+                for tl in real_timeline:
+                    if start_time <= tl["start"] < (i + 1) * interval:
+                        chapter_text.append(tl["text"])
+                
+                # ใช้ประโยคแรกที่พบหรือวลีเด่นเป็นชื่อ chapter
+                chapter_title = f"ส่วนที่ {i+1}: " + (chapter_text[0][:30] + "..." if chapter_text and len(chapter_text[0]) > 30 else (chapter_text[0] if chapter_text else "เนื้อหาช่วงนี้"))
+                
+                # สร้าง sub_chapters แบบง่ายๆ
+                sub_chapters = []
+                if len(chapter_text) > 1:
+                    sub_chapters.append({"sub_title": chapter_text[1][:30] + "...", "start_time_seconds": start_time + 60})
+                    if len(chapter_text) > 2:
+                        sub_chapters.append({"sub_title": chapter_text[2][:30] + "...", "start_time_seconds": start_time + 120})
+                
+                fallback_chapters.append({
+                    "start_time_seconds": start_time,
+                    "chapter_title": chapter_title,
+                    "sub_chapters": sub_chapters
+                })
+            
+            ai_analysis_data["video_chapters"] = fallback_chapters
+            logger.info(f"✅ Fallback Chapter Generation เสร็จสิ้น (สร้าง {len(fallback_chapters)} chapters)")
 
         # 🎯 [แก้บั๊กพิกัดเวลาเพี้ยนถาวร]: บังคับดึงพิกัดเวลาจาก Speech-to-Text ซิงค์ลงระบบบทเรียน
         synced_chapters = []
@@ -332,22 +441,23 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                     ratio = difflib.SequenceMatcher(None, clean_ch_title, clean_tl_text).ratio()
                     if ratio > best_ratio:
                         best_ratio = ratio
-                        # 🎯 ดึงตำแหน่งเวลาจริงของประโยคสคริปต์ตั้งต้น (ซึ่งแกะจากวินาทีเริ่มพูดคำแรก) แทนการดึงพิกัดปลายประโยค
-                        matched_time = tl["time"]
+                        matched_time = tl["start"]
                         matched_label = tl["label"]
                 
                 # 🛠️ [กลไกดักจับความแม่นยำด่านสุดท้าย]: ถ้าเป็นบทเรียนช่องแรก บังคับเซ็ตแกนเวลาเริ่มพูดที่ 1 วินาที (00:01) เสมอ
                 if idx == 0:
-                    matched_time = real_timeline[0]["time"] if real_timeline else 1
-                    # จัดฟอร์แมตฉลากข้อความให้โชว์ซิงค์เป็นเวลาเริ่มสตาร์ทคลิปทันที
-                    matched_label = "00:01" if matched_time <= 1 else real_timeline[0]["label"]
+                    matched_time = real_timeline[0]["start"] if real_timeline else 1
+                    # แปลงค่าเวลาเป็นฟอร์แมต MM:SS หรือ HH:MM:SS
+                    m, s = divmod(int(matched_time), 60)
+                    h, m = divmod(m, 60)
+                    matched_label = f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
                 elif best_ratio < 0.2:
                     # ป้องกันการคลาดเคลื่อน ถอยกลับไปใช้พิกัดคำนวณถอยหลัง 5 วินาทีจากช่วง AI ส่งมา
                     ai_start = ai_ch.get("start_time_seconds", 0)
                     matched_time = max(1, ai_start - 6) if ai_start > 0 else 1
-                    mins = int(matched_time // 60)
-                    secs = int(matched_time % 60)
-                    matched_label = f"{mins:02d}:{secs:02d}"
+                    m, s = divmod(int(matched_time), 60)
+                    h, m = divmod(m, 60)
+                    matched_label = f"{h:02d}:{m:02d}:{s:02d}" if h > 0 else f"{m:02d}:{s:02d}"
 
                 # จัดการสารบัญย่อย (Sub Chapters) ให้ซิงค์พิกัดคำแรกตามไปด้วย
                 synced_subs = []
@@ -363,8 +473,9 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                         s_ratio = difflib.SequenceMatcher(None, clean_sub_title, clean_tl_text).ratio()
                         if s_ratio > sub_best_ratio:
                             sub_best_ratio = s_ratio
-                            sub_time = tl["time"]
-                            sub_label = tl["label"]
+                            sub_time = tl["start"]
+                            m, s = divmod(int(sub_time), 60)
+                            sub_label = f"{m:02d}:{s:02d}"
                     
                     # บังคับปัดเศษบทย่อยช่วงแรกให้เกาะติดกับเวลาหลัก ไม่ค้างเตลิดไปตอนสรุปจบ
                     if s_idx == 0 and idx == 0:
@@ -372,22 +483,24 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
                         sub_label = matched_label
                     elif sub_best_ratio < 0.2 and sub_time > 0:
                         sub_time = max(1, sub_time - 5)
-                        sub_label = f"{int(sub_time//60):02d}:{int(sub_time%60):02d}"
+                        m, s = divmod(int(sub_time), 60)
+                        sub_label = f"{m:02d}:{s:02d}"
                             
                     synced_subs.append({
-                        "start_time_seconds": sub_time,
+                        "start_time_seconds": float(sub_time),
                         "time_range_label": sub_label,
                         "sub_title": sub_title
                     })
 
                 synced_chapters.append({
-                    "start_time_seconds": matched_time,
+                    "start_time_seconds": float(matched_time),
                     "time_range_label": matched_label,
                     "chapter_title": ch_title,
                     "sub_chapters": synced_subs
                 })
         else:
-            synced_chapters = [{"start_time_seconds": 1, "time_range_label": "00:01", "chapter_title": "บทเรียนหลักจากคลิปวิดีโอต้นฉบับ", "sub_chapters": []}]
+            m, s = divmod(int(1), 60)
+            synced_chapters = [{"start_time_seconds": 1, "time_range_label": f"{m:02d}:{s:02d}", "chapter_title": "บทเรียนหลักจากคลิปวิดีโอต้นฉบับ", "sub_chapters": []}]
 
         real_url_lower = real_url.lower()
         is_output_youtube = is_youtube
@@ -401,6 +514,17 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
             size_bytes = os.path.getsize(target_file_for_size)
             size_mb = size_bytes / (1024 * 1024)
             file_size_label = f"{size_mb:.2f} MB"
+
+        # Normalize timeline for frontend compatibility
+        normalized_timeline = []
+        for item in real_timeline:
+            normalized_item = item.copy()
+            # Ensure start and end are strictly numeric floats
+            normalized_item["start"] = float(item["start"])
+            normalized_item["end"] = float(item["end"])
+            # Mapping label to time for backward compatibility
+            normalized_item["time"] = item["label"] 
+            normalized_timeline.append(normalized_item)
 
         elapsed_seconds = time.time() - pipeline_start_time
         h = int(elapsed_seconds // 3600)
@@ -426,7 +550,7 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
             "real_youtube_url": real_url,
             "video_url": f"/static/{unique_id}.mp4",
             "model_used": selected_model if selected_model else "Gemini Multi-Model Dynamic Loop Engine",
-            "timeline": real_timeline, 
+            "timeline": normalized_timeline, 
             "summary": ai_analysis_data.get("summary", ["วิเคราะห์โครงสร้างเนื้อหาสำเร็จ"]),
             "file_size_label": file_size_label,
             "analysis_time": analysis_time_label,
@@ -446,6 +570,7 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
         }
 
         # 💾 บันทึกผลลงคลังถาวร
+        current_stage = "saving_results"
         if not os.path.exists(HISTORY_DIR): 
             os.makedirs(HISTORY_DIR)
             
@@ -461,9 +586,16 @@ async def enterprise_processing_pipeline(job_id: str, mode: str, youtube_url: Op
         logger.info(f"✅ สำเร็จเสร็จสิ้น! นำส่งข้อมูลเข้าระบบสำเร็จ")
 
     except Exception as e:
-        logger.error(f"❌ เกิดข้อผิดพลาดในระบบวิเคราะห์ข้อมูลจริง {job_id}: {str(e)}")
+        error_type = type(e).__name__
+        error_detail = str(e).strip() or repr(e)
+        logger.exception(
+            f"Pipeline failed | job={job_id} | stage={current_stage} "
+            f"| type={error_type} | detail={error_detail}"
+        )
         JOBS_DATA[job_id]["status"] = "failed"
-        JOBS_DATA[job_id]["error"] = str(e)
+        JOBS_DATA[job_id]["error"] = (
+            f"{current_stage}: {error_type}: {error_detail}"
+        )
 
 # ----------------------------------------------------
 # API ENDPOINTS
@@ -593,7 +725,9 @@ async def check_job_status(job_id: str):
 async def handle_pivot_translation(target_lang: str = Form(...), transcript_text: str = Form(...)):
     prompt = f"แปลข้อความในลิสต์นี้เป็นภาษา {target_lang} โดยคงรักษาโครงสร้างเวลาเดิมไว้อย่างเคร่งครัด"
     text_array = transcript_text.split("\n")
-    translation_result = ai_engine.generate_analytics(prompt, text_array)
+    # instantiate locally to avoid global ai_engine
+    local_ai_engine = AIAnalysisEngine(api_key=GEMINI_API_KEY)
+    translation_result = local_ai_engine.generate_analytics(prompt, text_array)
     if translation_result:
         return JSONResponse(content={ "translated_lines": translation_result if isinstance(translation_result, list) else [] })
     return JSONResponse(content={"error": "ระบบแปลภาษาขัดข้อง"}, status_code=500)

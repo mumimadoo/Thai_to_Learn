@@ -1,2 +1,6 @@
-# Thai_to_Learn
-# python -m uvicorn main:app --reload
+
+## คำสั่งเริ่มต้น 
+python -m uvicorn main:app --host 127.0.0.1 --port 8008 --reload
+
+จัดการข้อมูล 
+
